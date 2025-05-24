@@ -24,8 +24,19 @@ class Media(models.Model):
     nombre = models.CharField(max_length=200)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     enlace_plataforma = models.URLField(blank=True)
-    total_episodios = models.PositiveIntegerField(null=True, blank=True)
-    duracion = models.PositiveIntegerField(null=True, blank=True, help_text='Duración en minutos')
+    
+    # Campos específicos según el tipo
+    total_capitulos = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text='Número total de capítulos (solo para series y animes)'
+    )
+    duracion_minutos = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text='Duración en minutos (solo para películas)'
+    )
+    
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 

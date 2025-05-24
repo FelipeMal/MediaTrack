@@ -22,25 +22,53 @@ class LoginForm(AuthenticationForm):
 class MediaForm(forms.ModelForm):
     class Meta:
         model = Media
-        fields = ['nombre', 'tipo', 'enlace_plataforma', 'total_episodios', 'duracion']
+        fields = ['nombre', 'tipo', 'enlace_plataforma', 'total_capitulos', 'duracion_minutos']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'tipo': forms.Select(attrs={'class': 'form-control', 'onchange': 'toggleFields()'}),
             'enlace_plataforma': forms.URLInput(attrs={'class': 'form-control'}),
-            'total_episodios': forms.NumberInput(attrs={'class': 'form-control'}),
-            'duracion': forms.NumberInput(attrs={'class': 'form-control'}),
+            'total_capitulos': forms.NumberInput(attrs={'class': 'form-control'}),
+            'duracion_minutos': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Personalizar las etiquetas
+        self.fields['total_capitulos'].label = 'Total de Capítulos'
+        self.fields['duracion_minutos'].label = 'Duración (minutos)'
+        
+        # Si es una edición, mostrar los campos según el tipo
+        if self.instance.pk:
+            if self.instance.tipo in ['serie', 'anime']:
+                self.fields['total_capitulos'].widget.attrs['style'] = 'display: block;'
+            elif self.instance.tipo == 'pelicula':
+                self.fields['duracion_minutos'].widget.attrs['style'] = 'display: block;'
 
     def clean(self):
         cleaned_data = super().clean()
         tipo = cleaned_data.get('tipo')
-        total_episodios = cleaned_data.get('total_episodios')
-        duracion = cleaned_data.get('duracion')
+        total_capitulos = cleaned_data.get('total_capitulos')
+        duracion_minutos = cleaned_data.get('duracion_minutos')
 
-        if tipo in ['serie', 'anime'] and not total_episodios:
-            raise forms.ValidationError('Para series y animes, debes especificar el total de episodios.')
+        if tipo in ['serie', 'anime']:
+            if not total_capitulos:
+                # Solo validar si total_capitulos es requerido y no fue proporcionado
+                if self.fields['total_capitulos'].required and total_capitulos is None:
+                     raise forms.ValidationError('Para series y animes, debes especificar el total de capítulos.')
+            # Limpiar duración si no es película
+            cleaned_data['duracion_minutos'] = None
         
-        if tipo == 'pelicula' and not duracion:
-            raise forms.ValidationError('Para películas, debes especificar la duración.')
+        elif tipo == 'pelicula':
+            if not duracion_minutos:
+                 # Solo validar si duracion_minutos es requerido y no fue proporcionado
+                 if self.fields['duracion_minutos'].required and duracion_minutos is None:
+                      raise forms.ValidationError('Para películas, debes especificar la duración en minutos.')
+            # Limpiar capítulos si no es serie/anime
+            cleaned_data['total_capitulos'] = None
+        
+        # Si el tipo es 'otro', limpiar ambos campos
+        elif tipo == 'otro':
+             cleaned_data['total_capitulos'] = None
+             cleaned_data['duracion_minutos'] = None
 
         return cleaned_data 

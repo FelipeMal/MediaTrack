@@ -23,11 +23,11 @@
                                 
                                 {% if medio.tipo in 'serie,anime' %}
                                     <p class="card-text">
-                                        <strong>Total Episodios:</strong> {{ medio.total_episodios }}
+                                        <strong>Total Capítulos:</strong> {{ medio.total_capitulos }}
                                     </p>
-                                {% else %}
+                                {% elif medio.tipo == 'pelicula' %}
                                     <p class="card-text">
-                                        <strong>Duración:</strong> {{ medio.duracion }} minutos
+                                        <strong>Duración:</strong> {{ medio.duracion_minutos }} minutos
                                     </p>
                                 {% endif %}
 
