@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import RegistroForm, LoginForm
+from .forms import RegistroForm, LoginForm, MediaForm
+from .models import Media
 
 # Create your views here.
 
@@ -38,4 +39,41 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'mediatrack_app/dashboard.html')
+    medios = Media.objects.filter(usuario=request.user)
+    return render(request, 'mediatrack_app/dashboard.html', {'medios': medios})
+
+@login_required
+def agregar_medio(request):
+    if request.method == 'POST':
+        form = MediaForm(request.POST)
+        if form.is_valid():
+            medio = form.save(commit=False)
+            medio.usuario = request.user
+            medio.save()
+            messages.success(request, 'Medio agregado exitosamente.')
+            return redirect('dashboard')
+    else:
+        form = MediaForm()
+    return render(request, 'mediatrack_app/medio_form.html', {'form': form, 'accion': 'Agregar'})
+
+@login_required
+def editar_medio(request, pk):
+    medio = get_object_or_404(Media, pk=pk, usuario=request.user)
+    if request.method == 'POST':
+        form = MediaForm(request.POST, instance=medio)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Medio actualizado exitosamente.')
+            return redirect('dashboard')
+    else:
+        form = MediaForm(instance=medio)
+    return render(request, 'mediatrack_app/medio_form.html', {'form': form, 'accion': 'Editar'})
+
+@login_required
+def eliminar_medio(request, pk):
+    medio = get_object_or_404(Media, pk=pk, usuario=request.user)
+    if request.method == 'POST':
+        medio.delete()
+        messages.success(request, 'Medio eliminado exitosamente.')
+        return redirect('dashboard')
+    return render(request, 'mediatrack_app/confirmar_eliminar.html', {'medio': medio})

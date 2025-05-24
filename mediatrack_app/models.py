@@ -11,3 +11,28 @@ class Usuario(AbstractUser):
     
     def __str__(self):
         return self.email
+
+class Media(models.Model):
+    TIPO_CHOICES = [
+        ('serie', 'Serie'),
+        ('pelicula', 'Película'),
+        ('anime', 'Anime'),
+        ('otro', 'Otro'),
+    ]
+
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='medios')
+    nombre = models.CharField(max_length=200)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    enlace_plataforma = models.URLField(blank=True)
+    total_episodios = models.PositiveIntegerField(null=True, blank=True)
+    duracion = models.PositiveIntegerField(null=True, blank=True, help_text='Duración en minutos')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Medio'
+        verbose_name_plural = 'Medios'
+        ordering = ['-fecha_actualizacion']
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_tipo_display()})"

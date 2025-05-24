@@ -1,0 +1,25 @@
+{% extends 'mediatrack_app/base.html' %}
+
+{% block title %}Eliminar Medio - MediaTrack{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center">Confirmar Eliminación</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-center">¿Estás seguro de que deseas eliminar "{{ medio.nombre }}"?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

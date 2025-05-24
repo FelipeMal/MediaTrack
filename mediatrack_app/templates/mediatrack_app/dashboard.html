@@ -5,20 +5,57 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1 class="mb-4">Bienvenido a MediaTrack</h1>
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Tu Biblioteca de Medios</h5>
-                <p class="card-text">Aquí podrás gestionar tus series, películas y animes favoritos.</p>
-                <p class="card-text">Próximamente podrás:</p>
-                <ul>
-                    <li>Agregar nuevos medios a tu biblioteca</li>
-                    <li>Marcar episodios como vistos</li>
-                    <li>Calificar tus contenidos favoritos</li>
-                    <li>Acceder a enlaces de streaming</li>
-                </ul>
-            </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Mi Biblioteca de Medios</h1>
+            <a href="{% url 'agregar_medio' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Agregar Medio
+            </a>
         </div>
+
+        {% if medios %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for medio in medios %}
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ medio.nombre }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ medio.get_tipo_display }}</h6>
+                                
+                                {% if medio.tipo in 'serie,anime' %}
+                                    <p class="card-text">
+                                        <strong>Total Episodios:</strong> {{ medio.total_episodios }}
+                                    </p>
+                                {% else %}
+                                    <p class="card-text">
+                                        <strong>Duración:</strong> {{ medio.duracion }} minutos
+                                    </p>
+                                {% endif %}
+
+                                {% if medio.enlace_plataforma %}
+                                    <a href="{{ medio.enlace_plataforma }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        Ver en Plataforma
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100">
+                                    <a href="{% url 'editar_medio' medio.pk %}" class="btn btn-outline-secondary btn-sm">
+                                        Editar
+                                    </a>
+                                    <a href="{% url 'eliminar_medio' medio.pk %}" class="btn btn-outline-danger btn-sm">
+                                        Eliminar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">No tienes medios agregados aún. ¡Comienza agregando tu primer contenido!</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %} 
