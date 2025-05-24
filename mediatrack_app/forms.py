@@ -22,11 +22,12 @@ class LoginForm(AuthenticationForm):
 class MediaForm(forms.ModelForm):
     class Meta:
         model = Media
-        fields = ['nombre', 'tipo', 'enlace_plataforma', 'total_capitulos', 'duracion_minutos']
+        fields = ['nombre', 'tipo', 'enlace_plataforma', 'imagen_url', 'total_capitulos', 'duracion_minutos']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'tipo': forms.Select(attrs={'class': 'form-control', 'onchange': 'toggleFields()'}),
             'enlace_plataforma': forms.URLInput(attrs={'class': 'form-control'}),
+            'imagen_url': forms.URLInput(attrs={'class': 'form-control'}),
             'total_capitulos': forms.NumberInput(attrs={'class': 'form-control'}),
             'duracion_minutos': forms.NumberInput(attrs={'class': 'form-control'}),
         }

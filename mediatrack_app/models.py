@@ -23,7 +23,7 @@ class Media(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='medios')
     nombre = models.CharField(max_length=200)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    enlace_plataforma = models.URLField(blank=True)
+    enlace_plataforma = models.URLField(blank=True, verbose_name='Enlace a Plataforma')
     
     # Campos específicos según el tipo
     total_capitulos = models.PositiveIntegerField(
@@ -36,6 +36,9 @@ class Media(models.Model):
         blank=True,
         help_text='Duración en minutos (solo para películas)'
     )
+
+    # Campo para el enlace de la imagen de portada
+    imagen_url = models.URLField(blank=True, verbose_name='Enlace de Imagen de Portada')
     
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)

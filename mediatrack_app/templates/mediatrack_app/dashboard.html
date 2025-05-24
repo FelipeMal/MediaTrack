@@ -17,6 +17,9 @@
                 {% for medio in medios %}
                     <div class="col">
                         <div class="card h-100">
+                            {% if medio.imagen_url %}
+                                <img src="{{ medio.imagen_url }}" class="card-img-top" alt="Portada de {{ medio.nombre }}">
+                            {% endif %}
                             <div class="card-body">
                                 <h5 class="card-title">{{ medio.nombre }}</h5>
                                 <h6 class="card-subtitle mb-2 text-muted">{{ medio.get_tipo_display }}</h6>
