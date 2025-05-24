@@ -1,0 +1,1 @@
+web: gunicorn mediatrack.wsgi:application 
