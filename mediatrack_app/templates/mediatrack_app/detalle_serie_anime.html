@@ -22,22 +22,28 @@
         {% endif %}
 
         <h2 class="mt-4">Episodios</h2>
-        <ul class="list-group">
-            {% for seguimiento in episodios_seguimiento %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Episodio {{ seguimiento.numero_episodio }}
-                    <form method="post" action="{% url 'toggle_episodio_visto' seguimiento.pk %}">
-                        {% csrf_token %}
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="episodio-{{ seguimiento.pk }}" {% if seguimiento.visto %}checked{% endif %} onchange="this.form.submit()">
-                            <label class="form-check-label" for="episodio-{{ seguimiento.pk }}">Visto</label>
-                        </div>
-                    </form>
-                </li>
-            {% empty %}
-                <li class="list-group-item">No hay episodios registrados.</li>
-            {% endfor %}
-        </ul>
+
+        {% if episodios_seguimiento %}
+            <div class="row row-cols-auto g-2">
+                {% for seguimiento in episodios_seguimiento %}
+                    <div class="col">
+                         <form method="post" action="{% url 'toggle_episodio_visto' seguimiento.pk %}" class="h-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if seguimiento.visto %}btn-success{% else %}btn-outline-secondary{% endif %} d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                {{ seguimiento.numero_episodio }}
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">No hay episodios registrados para este medio.</p>
+                 {% if medio.total_capitulos %}
+                     <p class="mb-0">Asegúrate de que el número total de capítulos esté especificado correctamente.</p>
+                 {% endif %}
+            </div>
+        {% endif %}
 
     </div>
 </div>
