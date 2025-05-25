@@ -1,0 +1,16 @@
+{% extends 'mediatrack_app/base.html' %}
+
+{% block title %}Editar Calificación - Episodio {{ seguimiento_episodio.numero_episodio }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Editar Calificación y Comentario para Episodio {{ seguimiento_episodio.numero_episodio }} de {{ seguimiento_episodio.media.nombre }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'detalle_serie_anime' medio_pk=seguimiento_episodio.media.pk %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %} 

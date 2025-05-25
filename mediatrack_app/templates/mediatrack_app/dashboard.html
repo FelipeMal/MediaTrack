@@ -37,6 +37,11 @@
                                              Total de capítulos no especificado.
                                         {% endif %}
                                     </p>
+                                    {% if medio.promedio_calificacion is not None %}
+                                        <p class="card-text">
+                                            <strong>Calificación Promedio:</strong> {{ medio.promedio_calificacion|floatformat:1 }} / 5
+                                        </p>
+                                    {% endif %}
                                 {% elif medio.tipo == 'pelicula' %}
                                     <p class="card-text">
                                         <strong>Duración:</strong> {{ medio.duracion_minutos|minutes_to_hh_mm }} (HH:MM)
@@ -48,6 +53,11 @@
                                             <label class="form-check-label" for="visto-{{ medio.pk }}">Visto</label>
                                         </div>
                                     </form>
+                                    {% if medio.calificacion_pelicula is not None %}
+                                        <p class="card-text">
+                                            <strong>Mi Calificación:</strong> {{ medio.calificacion_pelicula }} / 5
+                                        </p>
+                                    {% endif %}
                                 {% endif %}
 
                                 {% if medio.enlace_plataforma %}
@@ -61,6 +71,10 @@
                                     {% if medio.tipo in 'serie,anime' %}
                                         <a href="{% url 'detalle_serie_anime' medio.pk %}" class="btn btn-outline-info btn-sm">
                                             Ver Episodios
+                                        </a>
+                                    {% elif medio.tipo == 'pelicula' %}
+                                         <a href="{% url 'detalle_pelicula' medio.pk %}" class="btn btn-outline-info btn-sm">
+                                            Ver Detalles
                                         </a>
                                     {% endif %}
                                     <a href="{% url 'editar_medio' medio.pk %}" class="btn btn-outline-secondary btn-sm">

@@ -23,16 +23,31 @@
 
         <h2 class="mt-4">Episodios</h2>
 
+        <div class="mb-3">
+            <label class="form-label">Tamaño de Visualización:</label>
+            <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="setEpisodeSize('small')">Pequeño</button>
+            <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="setEpisodeSize('medium')">Mediano</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setEpisodeSize('large')">Grande</button>
+        </div>
+
         {% if episodios_seguimiento %}
-            <div class="row row-cols-auto g-2">
+            <div id="episodes-grid" class="row row-cols-auto g-2">
                 {% for seguimiento in episodios_seguimiento %}
                     <div class="col">
-                         <form method="post" action="{% url 'toggle_episodio_visto' seguimiento.pk %}" class="h-100">
-                            {% csrf_token %}
-                            <button type="submit" class="btn {% if seguimiento.visto %}btn-success{% else %}btn-outline-secondary{% endif %} d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                {{ seguimiento.numero_episodio }}
-                            </button>
-                        </form>
+                        <div class="episode-square-container d-flex flex-column justify-content-between align-items-center {% if seguimiento.visto %}bg-success{% else %}bg-secondary{% endif %}">
+                            <form method="post" action="{% url 'toggle_episodio_visto' seguimiento.pk %}" class="w-100 h-100 d-flex justify-content-center align-items-center">
+                                {% csrf_token %}
+                                <button type="submit" class="btn flex-grow-1 h-100 d-flex justify-content-center align-items-center text-white border-0 p-0">
+                                     {{ seguimiento.numero_episodio }}
+                                </button>
+                            </form>
+                            <!-- Enlace para editar calificación -->
+                            <div class="d-flex justify-content-center w-100">
+                                 <a href="{% url 'editar_episodio_calificacion' seguimiento_pk=seguimiento.pk %}" class="btn btn-sm btn-outline-light border-0" aria-label="Editar calificación y comentario">
+                                     <i class="bi bi-pencil-square"></i>
+                                 </a>
+                            </div>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
@@ -47,4 +62,78 @@
 
     </div>
 </div>
+
+<style>
+/* Eliminar estilos anteriores de episode-square */
+.episode-square {
+    /* ... */
+}
+
+.episode-square-container {
+    width: 60px; /* Tamaño base */
+    height: 70px; /* Un poco más alto para el icono */
+    border-radius: 5px;
+    padding: 5px;
+    position: relative; /* Para posicionar elementos internos si es necesario */
+    font-size: 0.9em;
+}
+
+.episode-square-container .btn {
+    font-size: 1.2em; /* Tamaño del número del episodio */
+    font-weight: bold;
+}
+
+.episode-square-container a.btn-outline-light {
+     font-size: 0.8em;
+     padding: 0.1rem 0.3rem;
+}
+
+/* Ajustar tamaños dinámicos */
+.episode-small .episode-square-container {
+    width: 40px;
+    height: 55px;
+}
+.episode-small .episode-square-container .btn {
+    font-size: 0.8rem;
+}
+.episode-medium .episode-square-container {
+    width: 60px;
+    height: 70px;
+}
+.episode-medium .episode-square-container .btn {
+    font-size: 1rem;
+}
+.episode-large .episode-square-container {
+    width: 80px;
+    height: 90px;
+}
+.episode-large .episode-square-container .btn {
+    font-size: 1.2rem;
+}
+
+</style>
+
+<script>
+function setEpisodeSize(size) {
+    const grid = document.getElementById('episodes-grid');
+    if (!grid) return; // Salir si la cuadrícula no existe
+
+    // Eliminar clases de tamaño existentes en la cuadrícula
+    grid.classList.remove('episode-small', 'episode-medium', 'episode-large');
+    // Añadir la clase de tamaño a la cuadrícula para afectar los contenedores
+    grid.classList.add(`episode-${size}`);
+
+    // Note: Los estilos de tamaño ahora se aplican a .episode-square-container dentro del contexto del tamaño de la cuadrícula.
+
+    // Guardar la preferencia en localStorage
+    localStorage.setItem('episodeSize', size);
+}
+
+// Aplicar el tamaño guardado al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    const savedSize = localStorage.getItem('episodeSize') || 'medium'; // Tamaño mediano por defecto
+    setEpisodeSize(savedSize);
+});
+</script>
+
 {% endblock %} 

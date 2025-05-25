@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ValidationError
-from .models import Usuario, Media
+from .models import Usuario, Media, SeguimientoEpisodio
 import re
 
 class RegistroForm(UserCreationForm):
@@ -32,7 +32,7 @@ class MediaForm(forms.ModelForm):
 
     class Meta:
         model = Media
-        fields = ['nombre', 'tipo', 'enlace_plataforma', 'imagen_url', 'total_capitulos', 'duracion_minutos']
+        fields = ['nombre', 'tipo', 'enlace_plataforma', 'imagen_url', 'total_capitulos', 'duracion_minutos', 'calificacion_pelicula', 'comentario_pelicula']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'tipo': forms.Select(attrs={'class': 'form-control', 'onchange': 'toggleFields()'}),
@@ -40,6 +40,8 @@ class MediaForm(forms.ModelForm):
             'imagen_url': forms.URLInput(attrs={'class': 'form-control'}),
             'total_capitulos': forms.NumberInput(attrs={'class': 'form-control'}),
             'duracion_minutos': forms.HiddenInput(), # Mantenemos este oculto ya que usamos el campo HH:MM
+            'calificacion_pelicula': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5}),
+            'comentario_pelicula': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -54,31 +56,33 @@ class MediaForm(forms.ModelForm):
             minutos = minutos_totales % 60
             self.fields['duracion_hh_mm'].initial = f'{horas}:{minutos:02d}'
 
-        # Eliminamos la lógica de mostrar/ocultar en el init; el JavaScript lo manejará
+        # Eliminar la lógica de mostrar/ocultar en el init; el JavaScript lo manejará
 
     def clean(self):
         cleaned_data = super().clean()
         tipo = cleaned_data.get('tipo')
         total_capitulos = cleaned_data.get('total_capitulos')
         duracion_hh_mm = cleaned_data.get('duracion_hh_mm')
+        calificacion_pelicula = cleaned_data.get('calificacion_pelicula')
 
         if tipo in ['serie', 'anime']:
             # Validar total_capitulos para series/animes
             if total_capitulos is None:
                  raise forms.ValidationError({'total_capitulos': 'Para series y animes, debes especificar el total de capítulos.'})
-            # Limpiar duración si no es película
+            # Limpiar campos de película
             cleaned_data['duracion_minutos'] = None
             cleaned_data['duracion_hh_mm'] = None # Limpiar campo HH:MM
+            cleaned_data['calificacion_pelicula'] = None
+            cleaned_data['comentario_pelicula'] = ''
         
         elif tipo == 'pelicula':
             # Validar duracion_hh_mm para películas
             if not duracion_hh_mm:
                  raise forms.ValidationError({'duracion_hh_mm': 'Para películas, debes especificar la duración en formato HH:MM.'})
             
-            # Intentar parsear HH:MM
+            # Intentar parsear HH:MM y asignar a duracion_minutos
             match = re.match(r'^(\d+):(\d{2})$', duracion_hh_mm)
             if not match:
-                 # Si no coincide HH:MM, intentar solo minutos
                  if duracion_hh_mm.isdigit():
                      minutos_totales = int(duracion_hh_mm)
                  else:
@@ -89,15 +93,40 @@ class MediaForm(forms.ModelForm):
                 if minutos >= 60:
                      raise forms.ValidationError({'duracion_hh_mm': 'Los minutos deben ser menores de 60.'})
                 minutos_totales = horas * 60 + minutos
-            
-            # Asignar la duración total en minutos al campo del modelo
             cleaned_data['duracion_minutos'] = minutos_totales
-            cleaned_data['total_capitulos'] = None # Limpiar capítulos
 
-        # Si el tipo es 'otro', limpiar ambos campos
+            # Validar calificación si se ha visto la película
+            # La validación de rango ya está en el modelo, aquí solo verificamos si se proporcionó si es necesario
+            # if cleaned_data.get('visto') and calificacion_pelicula is None:
+            #      raise forms.ValidationError({'calificacion_pelicula': 'Debes calificar la película si la has marcado como vista.'}) # O manejar con valor por defecto 0/None
+
+            # Limpiar campos de serie/anime
+            cleaned_data['total_capitulos'] = None
+
+        # Si el tipo es 'otro', limpiar campos específicos
         elif tipo == 'otro':
              cleaned_data['total_capitulos'] = None
              cleaned_data['duracion_minutos'] = None
              cleaned_data['duracion_hh_mm'] = None # Limpiar campo HH:MM
+             cleaned_data['calificacion_pelicula'] = None
+             cleaned_data['comentario_pelicula'] = ''
 
-        return cleaned_data 
+        return cleaned_data
+
+class CalificacionComentarioEpisodioForm(forms.ModelForm):
+    class Meta:
+        model = SeguimientoEpisodio
+        fields = ['calificacion', 'comentario']
+        widgets = {
+            'calificacion': forms.NumberInput(attrs={'class': 'form-control form-control-sm', 'min': 1, 'max': 5, 'placeholder': '1-5'}),
+            'comentario': forms.Textarea(attrs={'class': 'form-control form-control-sm', 'rows': 2, 'placeholder': 'Comentario opcional'}),
+        }
+
+class CalificacionComentarioPeliculaForm(forms.ModelForm):
+    class Meta:
+        model = Media
+        fields = ['calificacion_pelicula', 'comentario_pelicula']
+        widgets = {
+            'calificacion_pelicula': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5, 'placeholder': '1-5 estrellas'}),
+            'comentario_pelicula': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Comentario opcional'}),
+        } 

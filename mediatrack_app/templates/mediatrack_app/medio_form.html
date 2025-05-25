@@ -40,17 +40,24 @@ function toggleFields() {
     const capitulosField = document.querySelector('#id_total_capitulos').parentElement;
     const duracionField = document.querySelector('#id_duracion_minutos').parentElement;
     const duracionHHMMField = document.querySelector('#id_duracion_hh_mm').parentElement;
+    const calificacionPeliculaField = document.querySelector('#id_calificacion_pelicula').parentElement;
+    const comentarioPeliculaField = document.querySelector('#id_comentario_pelicula').parentElement;
+
     
     // Ocultar ambos campos primero
     capitulosField.style.display = 'none';
     duracionField.style.display = 'none';
     duracionHHMMField.style.display = 'none';
+    calificacionPeliculaField.style.display = 'none';
+    comentarioPeliculaField.style.display = 'none';
 
     // Mostrar el campo correspondiente según el tipo
     if (tipoSelect.value === 'serie' || tipoSelect.value === 'anime') {
         capitulosField.style.display = 'block';
     } else if (tipoSelect.value === 'pelicula') {
         duracionHHMMField.style.display = 'block';
+        calificacionPeliculaField.style.display = 'block';
+        comentarioPeliculaField.style.display = 'block';
     }
 }
 

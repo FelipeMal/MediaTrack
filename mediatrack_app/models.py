@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Create your models here.
 
@@ -43,6 +44,18 @@ class Media(models.Model):
     # Campo para marcar películas como vistas
     visto = models.BooleanField(default=False, help_text='Marcar como visto (solo para películas)')
 
+    # Campos de calificación y comentario para películas
+    calificacion_pelicula = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text='Calificación de 1 a 5 estrellas (solo para películas)'
+    )
+    comentario_pelicula = models.TextField(
+        blank=True,
+        help_text='Comentario opcional (solo para películas)'
+    )
+
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
@@ -65,6 +78,15 @@ class SeguimientoEpisodio(models.Model):
     numero_episodio = models.PositiveIntegerField()
     visto = models.BooleanField(default=False)
     fecha_visto = models.DateTimeField(null=True, blank=True)
+
+    # Campos de calificación y comentario para episodios
+    calificacion = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text='Calificación de 1 a 5 estrellas'
+    )
+    comentario = models.TextField(blank=True)
 
     class Meta:
         unique_together = ('media', 'usuario', 'numero_episodio')
