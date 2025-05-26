@@ -12,8 +12,12 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'dashboard' %}">MediaTrack</a>
             {% if user.is_authenticated %}
-            <div class="navbar-nav ms-auto">
-                <span class="nav-item nav-link text-light">{{ user.email }}</span>
+            <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                <!-- Enlace de búsqueda -->
+                <a class="nav-link me-3" href="{% url 'buscar_medio' %}">
+                    <i class="bi bi-search"></i> Buscar Medios
+                </a>
+                <span class="nav-item nav-link text-light">{{ user.username }}</span>
                 <a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a>
             </div>
             {% endif %}

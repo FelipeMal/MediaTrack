@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Q # Importar Q para búsquedas OR
 from .forms import RegistroForm, LoginForm, MediaForm, CalificacionComentarioEpisodioForm, CalificacionComentarioPeliculaForm
 from .models import Media, SeguimientoEpisodio
 
@@ -40,6 +41,7 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
+    # Medios del usuario actual
     medios = Media.objects.filter(usuario=request.user).prefetch_related('episodios_vistos')
     
     # Calcular episodios vistos y porcentaje para series y animes, y promedio de calificación
@@ -55,36 +57,94 @@ def dashboard(request):
             # Calcular promedio de calificación para series/animes (solo de episodios vistos y calificados)
             calificaciones_episodios = [ep.calificacion for ep in episodios_vistos if ep.visto and ep.calificacion is not None]
             if calificaciones_episodios:
-                medio.promedio_calificacion = sum(calificaciones_episodios) / len(calificaciones_episodios)
+                # Asegurarse de no dividir por cero si no hay episodios calificados vistos
+                medio.promedio_calificacion = sum(calificaciones_episodios) / len(calificaciones_episodios) if len(calificaciones_episodios) > 0 else None
             else:
                 medio.promedio_calificacion = None
 
         elif medio.tipo == 'pelicula':
-            medio.vistos_count = 1 if medio.visto else 0
+            medio.visto_count = 1 if medio.visto else 0
             medio.total_capitulos = 1 # Para consistencia en la visualización del progreso
             medio.progreso_porcentaje = 100 if medio.visto else 0
             medio.promedio_calificacion = medio.calificacion_pelicula
 
         else:
-            medio.vistos_count = 0 # No aplica para otros
+            medio.visto_count = 0 # No aplica para otros
             medio.total_capitulos = 0
             medio.progreso_porcentaje = 0 # No aplica para otros
             medio.promedio_calificacion = None
 
-    return render(request, 'mediatrack_app/dashboard.html', {'medios': medios})
+    # Medios de otros usuarios (para descubrimiento)
+    # Excluir los medios que el usuario actual ya tiene
+    medios_usuario_ids = medios.values_list('id', flat=True)
+    medios_descubrimiento = Media.objects.exclude(usuario=request.user).exclude(id__in=medios_usuario_ids).order_by('-id')[:10] # Mostrar los 10 más recientes
+
+
+    return render(request, 'mediatrack_app/dashboard.html', {
+        'medios': medios,
+        'medios_descubrimiento': medios_descubrimiento
+        })
 
 @login_required
 def agregar_medio(request):
+    # Verificar si se pasó un medio_id para precargar el formulario
+    medio_id = request.GET.get('medio_id')
+    initial_data = None
+    if medio_id:
+        try:
+            # Intentar obtener el medio de otro usuario
+            original_medio = Media.objects.exclude(usuario=request.user).get(pk=medio_id)
+            # Preparar datos iniciales, excluyendo campos específicos del usuario
+            initial_data = {
+                'nombre': original_medio.nombre,
+                'tipo': original_medio.tipo,
+                'enlace_plataforma': original_medio.enlace_plataforma,
+                'total_capitulos': original_medio.total_capitulos,
+                #'duracion_minutos': original_medio.duracion_minutos, # Ya no copiamos directamente minutos
+                'imagen_url': original_medio.imagen_url,
+                # No copiar datos de seguimiento, calificación o comentario de películas/episodios
+            }
+            
+            # Si es una película, calcular HH:MM y añadirlo a initial_data
+            if original_medio.tipo == 'pelicula' and original_medio.duracion_minutos is not None:
+                 horas = original_medio.duracion_minutos // 60
+                 minutos = original_medio.duracion_minutos % 60
+                 initial_data['duracion_hh_mm'] = f'{horas:02d}:{minutos:02d}'
+
+        except Media.DoesNotExist:
+            # Si el medio no existe o pertenece al usuario actual, ignorar medio_id
+            pass
+
     if request.method == 'POST':
         form = MediaForm(request.POST)
         if form.is_valid():
-            medio = form.save(commit=False)
-            medio.usuario = request.user
-            medio.save()
-            messages.success(request, 'Medio agregado exitosamente.')
+            # Crear una nueva instancia del medio para el usuario actual
+            nuevo_medio = Media()
+            nuevo_medio.usuario = request.user
+            # Copiar datos validados del formulario a la nueva instancia
+            for field in form.cleaned_data:
+                 # Excluir campos que no queremos copiar directamente si vinieron del precargado,
+                 # como calificación o si ya fue visto (que no deberían estar en initial_data de todos modos).
+                 # Aunque MediaForm no incluye calificación o visto directamente, es buena práctica.
+                if hasattr(nuevo_medio, field):
+                    setattr(nuevo_medio, field, form.cleaned_data[field])
+            
+            # Asegurarse de que los campos específicos de tipo estén correctos
+            if nuevo_medio.tipo not in ['serie', 'anime']:
+                 nuevo_medio.total_capitulos = None
+            if nuevo_medio.tipo != 'pelicula':
+                 nuevo_medio.duracion_minutos = None
+                 nuevo_medio.visto = False # Una película agregada no está vista por defecto
+                 nuevo_medio.calificacion_pelicula = None # No copiar calificación de película de otro usuario
+
+            nuevo_medio.save()
+
+            messages.success(request, 'Medio agregado exitosamente a tu lista.')
             return redirect('dashboard')
     else:
-        form = MediaForm()
+        # Si es GET, crear el formulario con los datos iniciales si existen
+        form = MediaForm(initial=initial_data)
+
     return render(request, 'mediatrack_app/medio_form.html', {'form': form, 'accion': 'Agregar'})
 
 @login_required
@@ -212,3 +272,22 @@ def toggle_visto(request, medio_pk):
     medio = get_object_or_404(Media, pk=medio_pk, usuario=request.user, tipo='pelicula')
     # La lógica de toggle ahora está en detalle_pelicula, esta vista es solo para el endpoint POST
     return redirect('detalle_pelicula', medio_pk=medio.pk)
+
+@login_required
+def buscar_medio(request):
+    query = request.GET.get('q')
+    resultados = Media.objects.none() # Inicialmente vacío
+    if query:
+        # Obtener IDs de medios que el usuario ya tiene en su lista
+        medios_usuario_ids = Media.objects.filter(usuario=request.user).values_list('id', flat=True)
+
+        # Buscar medios que coincidan con la query en nombre o enlace,
+        # excluyendo los que el usuario ya tiene.
+        resultados = Media.objects.filter(
+            Q(nombre__icontains=query) | Q(enlace_plataforma__icontains=query)
+        ).exclude(usuario=request.user).exclude(id__in=medios_usuario_ids)
+
+    return render(request, 'mediatrack_app/buscar_medio.html', {
+        'query': query,
+        'resultados': resultados
+    })

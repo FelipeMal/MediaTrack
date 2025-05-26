@@ -94,6 +94,47 @@
                 <p class="mb-0">No tienes medios agregados aún. ¡Comienza agregando tu primer contenido!</p>
             </div>
         {% endif %}
+
+        <h2 class="mt-5">Medios para Descubrir</h2>
+
+        {% if medios_descubrimiento %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for medio in medios_descubrimiento %}
+                    <div class="col">
+                        <div class="card h-100 border-info">
+                            {% if medio.imagen_url %}
+                                <img src="{{ medio.imagen_url }}" class="card-img-top" alt="Portada de {{ medio.nombre }}" style="object-fit: cover; height: 200px;">
+                            {% endif %}
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">{{ medio.nombre }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ medio.get_tipo_display }}</h6>
+                                
+                                {% comment %}
+                                Aquí podrías añadir información relevante del medio para descubrimiento, 
+                                como tipo, duración, o si es serie/anime, el total de capítulos.
+                                {% endcomment %}
+
+                                {% if medio.enlace_plataforma %}
+                                    <a href="{{ medio.enlace_plataforma }}" target="_blank" class="btn btn-outline-primary btn-sm mt-auto">
+                                        Ver en Plataforma
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{% url 'agregar_medio' %}?medio_id={{ medio.pk }}" class="btn btn-success btn-sm w-100">
+                                    Agregar a mi lista
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">
+                <p class="mb-0">No se encontraron nuevos medios para descubrir en este momento.</p>
+            </div>
+        {% endif %}
+
     </div>
 </div>
 {% endblock %} 

@@ -14,4 +14,5 @@ urlpatterns = [
     path('pelicula/<int:medio_pk>/detalle/', views.detalle_pelicula, name='detalle_pelicula'),
     path('seguimiento_episodio/<int:seguimiento_pk>/toggle_visto/', views.toggle_episodio_visto, name='toggle_episodio_visto'),
     path('episodio/<int:seguimiento_pk>/editar_calificacion/', views.editar_episodio_calificacion, name='editar_episodio_calificacion'),
+    path('buscar/', views.buscar_medio, name='buscar_medio'),
 ] 
